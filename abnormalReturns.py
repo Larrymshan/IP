@@ -27,7 +27,7 @@ for index, row in df.iterrows():
     # 1. Date Conversion
     ipo_date = pd.to_datetime(row['ipo_date']).date() # Use .date() to strip time
     
-    # 2. Match Date (Remove the minus 1 day logic)
+    # 2. Match Date
     sp_data_for_date = sp_data[sp_data.index.date == ipo_date]
     
     # Check if we actually found market data for that day (avoids crash on weekends)
@@ -41,11 +41,16 @@ for index, row in df.iterrows():
         # 4. Calculate Abnormal Return
         abnorm_returns = row['underpricing'] - norm_returns
 
-        # 5. WRITE TO DATAFRAME (The most important fix)
+        # 5. Write to Dataframe
         df.loc[index, 'abnorm_returns'] = abnorm_returns
     else:
         # Handle cases where IPO was on a weekend/holiday
         df.loc[index, 'abnorm_returns'] = None
 
+# Get top performers and map underpricing and abnorm returns to percentages
+top_performers = df[['ticker', 'offer_price', 'close_price', 'underpricing', 'abnorm_returns']].sort_values(by='abnorm_returns', ascending=False).head(5).copy()
+top_performers['underpricing'] = top_performers['underpricing'].map('{:.2%}'.format)
+top_performers['abnorm_returns'] = top_performers['abnorm_returns'].map('{:.2%}'.format)
+
 print("-----Top 5 Strongest Abnormal Returns-----")
-print(df[['ticker', 'offer_price', 'close_price', 'underpricing', 'abnorm_returns']].sort_values(by = 'abnorm_returns', ascending=False).head(5))
+print(top_performers.to_string(index=False))
